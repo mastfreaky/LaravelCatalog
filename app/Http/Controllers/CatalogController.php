@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Requests\PostCatalogSearchRequest;
 
 use App\Category;
 use App\Product;
@@ -30,15 +31,13 @@ class CatalogController extends Controller
      *
      * @return mixed
      */
-    public function search(Request $request)
+    public function search(PostCatalogSearchRequest $request)
     {
-        $search = $request->input('search');
-        $type = $request->input('type');
-        $products = array();
-        if (isset($search))
-        {
-            $products = $type == 0 ? Product::searchByTitle($search) : Product::searchByDescription($search);
-        }
+        $data = $request->validated();
+        $search = $data['search'];
+        $type = $data['type'];
+
+        $products = ($type == 0 ? Product::searchByTitle($search) : Product::searchByDescription($search));
 
         return view('catalog.search_result', [
             'products' => $products
@@ -54,11 +53,17 @@ class CatalogController extends Controller
      */
     public function category($category)
     {
+        $result = array('products' => array(), 'category_name' => $category);
         $category = Category::getCategory($category);
 
-        return view('catalog.category', [
-            'products' => $category->products,
-            'category_name' => $category->title
-        ]);
+        if (isset($category))
+        {
+            $result = array(
+                'products' => $category->products,
+                'category_name' => $category->title
+            );
+        }
+
+        return view('catalog.category', $result);
     }
 }
